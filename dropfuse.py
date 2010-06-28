@@ -121,8 +121,7 @@ class DropFuse(Operations):
         self.client.url = host
         self.root = path
         f = \
-            urllib.urlopen('https://www.dropbox.com/s/c6ecc2plwconh5x#view:list'
-                           )
+            urllib.urlopen(host)
         s = f.read()
         self.now = time()
         self.client.parse(s)
