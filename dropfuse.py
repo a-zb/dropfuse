@@ -8,7 +8,7 @@
 #See CAPABILITIES for limitations of this software
 
 from fuse import *
-import urllib, sgmlib, re, os
+import urllib, sgmllib, re, os
 from sys import argv, exit
 
 from time import time
