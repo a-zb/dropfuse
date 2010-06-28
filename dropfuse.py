@@ -14,7 +14,7 @@ from sys import argv, exit
 from time import time
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from errno import ENOENT, EACCES
-
+import pwd
 
 class DropParser(sgmllib.SGMLParser):
 
