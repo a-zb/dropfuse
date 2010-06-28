@@ -1,0 +1,38 @@
+Requires :
+ Fuse filesystem libraries.
+ Install Fuse from here: http://fuse.sourceforge.net/
+ 
+ Python
+
+Uses: http://code.google.com/p/fusepy/ - Provided with this software.
+
+
+DropFuse limitations and capabilites:
+
+1).
+ Uses an SGML html parser to extract the document information.
+ This is hardly optimal, but I am not aware of any official API for the
+ linked folder feature introduced by DropBox in client 0.8
+ 
+2).
+ It will mount the linked folder to a specified directory, but it will
+ not refresh the mounted directory if the remote shared folder has been
+ updated on DropBox servers.
+ 
+3).
+ Once mounted, folder's contents can be easily copied to your local storage.
+ No data is transferred until a copy is performed.
+ Copy them to a local folder before using.
+ Currently, copying process seems to rather slow.
+ 
+4).
+ Reading nested subfolders is not supported yet.
+ Only files located directly in linked folder are usable.
+ 
+5).
+ Do not use the URL shortener service link provided by DropBox
+ These links look like this: http://db.tt/bP1ntM and are not supported yet.
+ Use the actual destination link which is usually shown in the browser's
+ address bar.
+
+See README for instructions.
