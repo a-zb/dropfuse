@@ -15,69 +15,109 @@ from time import time
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from errno import ENOENT, EACCES
 import pwd
-import pyquery
-from multiprocessing.managers import BaseManager, BaseProxy
 
-class DropParse():
+class DropParser(sgmllib.SGMLParser):
 
-    @property
-    def files(self):
-        return self._files
-
-    def __init__(self):
-        self._files = {}
-        self.dirs = {}
-        self.pq = None
+    '''A simple parser for linked Dropbox folders.'''
+    in_list = False
+    d = 0
+    in_file_size = False
+    in_modified = False
+    in_list = False
+    in_dir = False
+    in_file = False
+    cur_file = ''
+    cur_dir = ''
+    url = ''
 
     def parse(self, s):
-        self.pq = pyquery.PyQuery(s)
-        self.pq_listing = self.pq('ol.gallery-list-view')
-        self.file_list = self.pq_listing.find('li.list-view-cols')
-        for self.file in self.file_list:
-            filename = self.getName()
-            filesize = self.getSize()
-            href = self.getHref()
-            self._files[filename] = {'name': filename, 'size': filesize, 'href': href}
-    def getName(self):
-        self.pq_file = pyquery.PyQuery(self.file)
-        return self.pq_file.find('a.filename-link').attr('href').split("/")[-1:][0]
-    
-    def getHref(self):
-        self.pq_file = pyquery.PyQuery(self.file)
-        return self.pq_file.find('a.filename-link').attr('href')
+        """Parse the given string 's'."""
+        self.feed(s)
+        self.close()
+        self.in_list = False
+        self.in_dir = False
+        self.in_file = False
+        self.in_file_size = False
+        self.in_modified = False
+        self.cur_file = ''
+        self.cur_dir = ''
+        self.url = ''
 
-    def getSize(self):
-        self.pq_file = pyquery.PyQuery(self.file)
-        size = self.pq_file.find('div.filesize-col span.size').text()
-        num, var = size.split(" ")
-        if var.lower() == "mb": return int(float(num)*1024*1024)
-        elif var.lower() == "kb": return int(float(num)*1024)
-        else: return int(num)
+    def __init__(self, verbose=0):
+        """Initialise an object, passing 'verbose' to the superclass."""
+        sgmllib.SGMLParser.__init__(self, verbose)
+        self.files = {}
+        self.dirs = {}
 
+    def handle_data(self, data):
+        cldata = data.strip()
 
-class Cache(object):
-    
-    def __init__(self):
-        self.cache = {}
+        if self.in_file_size:
+            if len(cldata) > 0:
+                self.in_file_size = False
+                self.files[self.cur_file]['file_size'] = cldata
+        elif self.in_modified:
+            if len(cldata) > 0:
+                self.in_modified = False
+                self.files[self.cur_file]['modified'] = cldata
 
-    def loadCache(self, files):
-        print 'loading cache'
-        for fl in files:
-            print fl, ' ... '
-            self.cache[fl] = {'data': urllib.urlopen(files[fl]['href'].replace("www.dropbox.com","dl-web.dropbox.com")).read()}
-            print len(self.cache[fl]['data']) , ' bytes' 
-        return self.cache
+    def start_div(self, attributes):
+        if self.in_file:
+            for (name, value) in attributes:
+                if name == 'class' and value == 'filesize':
+                    self.in_file_size = True
+                    self.in_modified = False
+                elif name == 'class' and value == 'modified':
+                    self.in_file_size = False
+                    self.in_modified = True
 
-class CacheManager(BaseManager):
-    pass
+        if self.in_list:
+            self.d += 1
+            return
+        for (name, value) in attributes:
+            if name == 'id' and value == 'list-browser':
+                self.d += 1
+                self.in_list = True
 
-CacheManager.register('Cache', Cache)
+    def end_div(self):
+        if self.in_list:
+            self.d -= 1
+
+        if self.d <= 0:
+            self.in_list = False
+
+    def start_a(self, attributes):
+        """Process a hyperlink and its 'attributes'."""
+        self.in_dir = False
+        self.in_file = False
+
+        for (name, value) in attributes:
+            if name == 'href' and value != '#':
+                if self.in_list:
+                    if re.search('v=l$', value):
+                        self.in_dir = True
+                        self.in_file = False
+                        self.dirs[value] = {'name': value}
+                        self.cur_dir = value
+                    else:
+                        self.in_file = True
+                        self.in_dir = False
+                        self.files[value] = {'name': value}
+                        self.cur_file = value
+
+    def get_dirs(self):
+        '''Return the list of dirs.'''
+        return self.dirs
+
+    def get_files(self):
+        '''Return the list of files.'''
+        return self.files
+
 
 class DropFuse(Operations):
 
     def __init__(self, host, path=''):
-        self.cache = None
-        self.client = DropParse()
+        self.client = DropParser()
         self.client.url = host
         self.root = path
         f = \
@@ -85,30 +125,30 @@ class DropFuse(Operations):
         s = f.read()
         self.now = time()
         self.client.parse(s)
-        print self.client.files
-        self.loadCache()
-        
-
-
-    def loadCache(self):
-        self.cacheManager = CacheManager()
-        self.cacheManager.start()
-        cs = self.cacheManager.Cache()
-        self.cache = cs.loadCache(self.client.files)
-        for c in self.cache:
-            print c
 
 
     def getattr(self, path, fh=None):
         uid = pwd.getpwuid(os.getuid()).pw_uid
         gid = pwd.getpwuid(os.getuid()).pw_gid
         now = time()
-        
-        for fl in self.client.files:
+        for dir in self.client.get_dirs():
+            if path == '/%s' \
+                % urllib.unquote(os.path.basename(dir).split('?')[0]):
+                return dict(
+                    st_mode=S_IFDIR | 0755,
+                    st_ctime=now,
+                    st_mtime=now,
+                    st_atime=now,
+                    st_nlink=2,
+                    st_uid=uid,
+                    st_gid=gid,
+                    )
+        for fl in self.client.get_files():
             if path == '/%s' % urllib.unquote(os.path.basename(fl)):
                 return dict(
                     st_mode=S_IFREG | 0444,
-                    st_size=self.client.files[fl]['size'],
+                    st_size=int(self.client.get_files()[fl]['file_size'
+                                ]),
                     st_ctime=self.now,
                     st_mtime=self.now,
                     st_atime=self.now,
@@ -147,8 +187,13 @@ class DropFuse(Operations):
     def readdir(self, path, fh):
         defaults = ['.', '..']
         if path == '/':
-            for fl in self.client.files:
-                defaults.append(urllib.unquote(self.client.files[fl]['name']))
+            for fl in self.client.get_files():
+                defaults.append(urllib.unquote(os.path.basename(fl)))
+
+            for dir in self.client.get_dirs():
+                defaults.append('%s/'
+                                % urllib.unquote(os.path.basename(dir).split('?'
+                                )[0]))
 
         return defaults
 
@@ -169,18 +214,13 @@ class DropFuse(Operations):
         return data[offset:offset + size]
 
     def get_file(self, path):
-        for fl in self.client.files:
-            if path == '/%s' % urllib.unquote(self.client.files[fl]['name']):
-                return self.cache[fl]['data']
+        for fl in self.client.get_files():
+            if path == '/%s' % urllib.unquote(os.path.basename(fl)):
+                url=fl.replace("www.dropbox.com","dl-web.dropbox.com")
+                return urllib.urlopen(url).read()
 
 
 if __name__ == '__main__':
-    """
-    url = argv[1]
-    parser = DropParse()
-    parser.parse(urllib.urlopen(url).read())
-    print parser.files
-    """
     if len(argv) != 3:
         print 'usage: %s <dropbox link> <mount point>' % argv[0]
         exit(1)
