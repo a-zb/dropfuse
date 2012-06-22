@@ -23,4 +23,9 @@
     
     umount mnt/
     
+
+    New requirements: multiprocessing and pyquery.
+    Dropfuse will attempt to cache every single item in the folder. It will do so blindly, without any limits
+    thus caution has to be exercised what size of file it is used for. Positive trade-off is that audio/video
+    playback is butter-smooth,- caching options will be provided in future enhancements.
     
