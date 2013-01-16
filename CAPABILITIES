@@ -12,12 +12,12 @@ DropFuse limitations and capabilites:
 1).
  Uses an SGML html parser to extract the document information.
  This is hardly optimal, but I am not aware of any official API for the
- linked folder feature introduced by DropBox in client 0.8
+ linked folder feature introduced by Dropbox in client 0.8
  
 2).
  It will mount the linked folder to a specified directory, but it will
  not refresh the mounted directory if the remote shared folder has been
- updated on DropBox servers.
+ updated on Dropbox servers.
  
 3).
  Once mounted, folder's contents can be easily copied to your local storage.
@@ -30,7 +30,7 @@ DropFuse limitations and capabilites:
  Only files located directly in linked folder are usable.
  
 5).
- Do not use the URL shortener service link provided by DropBox
+ Do not use the URL shortener service link provided by Dropbox
  These links look like this: http://db.tt/bP1ntM and are not supported yet.
  Use the actual destination link which is usually shown in the browser's
  address bar.
