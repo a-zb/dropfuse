@@ -63,9 +63,7 @@ class Cache(object):
     def loadCache(self, files):
         print 'loading cache'
         for fl in files:
-            print fl, ' ... '
             self.cache[fl] = {'data': urllib.urlopen(files[fl]['href'].replace("www.dropbox.com","dl-web.dropbox.com")).read()}
-            print len(self.cache[fl]['data']) , ' bytes' 
         return self.cache
 
 class CacheManager(BaseManager):
