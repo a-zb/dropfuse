@@ -83,18 +83,14 @@ class DropFuse(Operations):
         s = f.read()
         self.now = time()
         self.client.parse(s)
-        print self.client.files
         self.loadCache()
         
-
 
     def loadCache(self):
         self.cacheManager = CacheManager()
         self.cacheManager.start()
         cs = self.cacheManager.Cache()
         self.cache = cs.loadCache(self.client.files)
-        for c in self.cache:
-            print c
 
 
     def getattr(self, path, fh=None):
