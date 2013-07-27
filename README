@@ -1,3 +1,29 @@
+How to use section is right after release notes.
+
+Release notes:
+==============
+It has been reported that Fuse, mainly MacFUSE is no longer
+working correctly on newer versions of OSX. I have limited access
+and only to 10.8.2 and have verified it to be the case.
+
+If you see this type of message when you attempt to use Dropfuse -
+
+<snip>
+/Library/Filesystems/fusefs.fs/Support/fusefs.kext failed to load -
+(libkern/kext) link error; check the system/kernel logs for errors or try kextutil(8).
+the MacFUSE file system is not available (71)
+</snip>
+
+even though MacFUSE is installed, please follow these steps:
+Download a successor library called OSXFuse
+from this SourceForge page http://sourceforge.net/projects/osxfuse/?source=dlp
+
+Install it and check the options to install the MacFUSE compatibility layer.
+Installing OSXFUSE with this option will remove the old and not working
+MacFUSE library if you happen to have it installed.
+
+How to use:
+===========
 1). Install: Fuse
 2). Get a link to a DropBox linked folder
 3). Extract the contents of this software and navigate to the software
