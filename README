@@ -5,7 +5,7 @@
 4). Create an empty directory used during mounting the remote folder,
     for instance : mkdir mnt
 5). Run the command:
-    python dropfuse.py <dropboc.com url> mnt/
+    python dropfuse.py <dropbox.com url> mnt/
     
     To get you started, I have created a public folder link that you can
     test this on:
