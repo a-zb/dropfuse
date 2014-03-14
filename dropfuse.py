@@ -50,7 +50,8 @@ class DropParse():
         self.pq_file = pyquery.PyQuery(self.file)
         size = self.pq_file.find('div.filesize-col span.size').text()
         num, var = size.split(" ")
-        if var.lower() == "mb": return int(float(num)*1024*1024)
+        if var.lower() == "gb": return int(float(num)*1024*1024*1024)
+        elif var.lower() == "mb": return int(float(num)*1024*1024)
         elif var.lower() == "kb": return int(float(num)*1024)
         else: return int(num)
 
